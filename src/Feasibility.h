@@ -8,6 +8,10 @@ struct Route {
     std::vector<int> nodes;  // deve ser como: {0, ..., 0}
 };
 
+inline bool operator==(const Route& lhs, const Route& rhs) {
+    return lhs.nodes == rhs.nodes;
+}
+
 struct RouteFeasInfo {
     bool ok = false;
     long long cap_violation = 0; // >0 se inviável

@@ -25,7 +25,10 @@ public:
     inline int getVehicleCapacity() const { return vehicle_capacity; }
     inline double getTravelCost(int i, int j) const { return cost_matrix[i][j]; }
     inline double **getCostMatrix() { return cost_matrix; }
-    inline long long getStationDemand(int i) const { return i < station_demands.size() ? station_demands[i] : 0; }
+    inline long long getStationDemand(int i) const { 
+        if (i < 0) return 0;
+        return static_cast<size_t>(i) < station_demands.size() ? station_demands[i] : 0; 
+    }
     inline vector<long long> getAllDemands() const { return station_demands; }
     
     string getInstanceName();

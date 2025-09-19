@@ -1,11 +1,13 @@
 #include "Data.h"
 #include "Feasibility.h"
 #include <string>
+#include "test_relocate.h"
+#include <iostream>
 
 int main(int argc, char *argv[]) {
     Data *data = new Data(argc, argv);
     
-    cout << "Carregando instância do sistema JP-Bike..." << endl;
+    std::cout << "Carregando instancia do sistema JP-Bike..." << std::endl;
     data->read();
     
     cout << "\n";
@@ -79,6 +81,8 @@ int main(int argc, char *argv[]) {
         cout << "Teste 1 (rota vazia): " << (info1.ok ? "PASSOU" : "FALHOU") << endl;
         cout << "Teste 2 (contra-exemplo): " << (!info2.ok ? "PASSOU (inviável como esperado)" : "FALHOU (deveria ser inviável)") << endl;
     }
+
+    run_all_relocate_tests(*data);
     
     delete data;
     
