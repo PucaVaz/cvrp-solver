@@ -3,13 +3,14 @@ CPPFLAGS = -std=c++20 -O3 -Wall
 
 SRCDIR = .
 OBJDIR = ../obj
+BINDIR = ../bin
 
 SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
-TARGET = ../jp_bike_solver.o
+TARGET = $(BINDIR)/apa_jpbike
 
-# create obj directory
-$(shell mkdir -p $(OBJDIR))
+# Cria diretórios obj/ e bin/
+$(shell mkdir -p $(OBJDIR) $(BINDIR))
 
 all: $(TARGET)
 
@@ -23,6 +24,9 @@ clean:
 	rm -f $(OBJDIR)/*.o $(TARGET)
 
 test: $(TARGET)
-	$(TARGET) ../instances/instancia_pdf.txt
+	$(TARGET) --instance ../instances/instancias_teste/n14_q30.txt
 
-.PHONY: all clean test
+run: $(TARGET)
+	$(TARGET) --instance ../instances/instancias_teste/n14_q30.txt --out ../outputs/
+
+.PHONY: all clean test run

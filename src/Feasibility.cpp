@@ -38,19 +38,22 @@ RouteFeasInfo CheckRouteFeasible(const Data& data, const Route& route) {
     }
     
     long long Q = static_cast<long long>(data.getVehicleCapacity());
-    
-    // Verifica viabilidade: (max_prefix - min_prefix) <= Q
-    long long load_range = max_prefix - min_prefix;
-    bool feasible = load_range <= Q;
-    
+
+    // Calcula intervalo viável de carga inicial L0
+    long long L0_min = std::max(0LL, -min_prefix);  // para não ficar negativo
+    long long L0_max = Q - max_prefix;              // para não exceder Q no pico
+
+    // Rota é viável se existe L0 válido no intervalo [L0_min, L0_max]
+    bool feasible = (L0_min <= L0_max);
+
     // Define valores de retorno
     info.ok = feasible;
     info.max_prefix = max_prefix;
     info.min_prefix = min_prefix;
-    info.L0_min = max_prefix;
-    info.L0_max = Q + min_prefix;
-    info.suggested_L0 = std::max(0LL, std::min(info.L0_min, Q));
-    info.cap_violation = std::max(0LL, load_range - Q);
+    info.L0_min = L0_min;
+    info.L0_max = L0_max;
+    info.suggested_L0 = std::clamp(L0_min, 0LL, Q);
+    info.cap_violation = feasible ? 0LL : (L0_min - L0_max);
     
     return info;
 }
