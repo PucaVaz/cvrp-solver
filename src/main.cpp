@@ -1,6 +1,36 @@
 #include "Data.h"
 #include "Feasibility.h"
+#include "Constructive.h"
 #include <string>
+
+void PrintSolution(const Data& data, const Solution& solution) {
+    cout << "\n=== Solução Construída (Heurística Gulosa) ===" << endl;
+    cout << "Custo total da solução: " << solution.total_cost << endl;
+    cout << "Número de veículos utilizados: " << solution.routes.size() << endl;
+
+    for (size_t i = 0; i < solution.routes.size(); ++i) {
+        const Route& route = solution.routes[i];
+        cout << "Rota " << (i + 1) << ": ";
+
+        for (size_t j = 0; j < route.nodes.size(); ++j) {
+            cout << route.nodes[j];
+            if (j < route.nodes.size() - 1) {
+                cout << " -> ";
+            }
+        }
+
+        long long route_cost = RoutesCost(data, route);
+        cout << " (custo: " << route_cost << ")" << endl;
+
+        // Verifica viabilidade da rota
+        RouteFeasInfo feas_info = CheckRouteFeasible(data, route);
+        cout << "  Viável: " << (feas_info.ok ? "SIM" : "NÃO");
+        if (feas_info.ok) {
+            cout << " (carga inicial sugerida: " << feas_info.suggested_L0 << ")";
+        }
+        cout << endl;
+    }
+}
 
 int main(int argc, char *argv[]) {
     Data *data = new Data(argc, argv);
@@ -79,7 +109,27 @@ int main(int argc, char *argv[]) {
         cout << "Teste 1 (rota vazia): " << (info1.ok ? "PASSOU" : "FALHOU") << endl;
         cout << "Teste 2 (contra-exemplo): " << (!info2.ok ? "PASSOU (inviável como esperado)" : "FALHOU (deveria ser inviável)") << endl;
     }
-    
+
+    // Executa a heurística construtiva gulosa
+    cout << "\n=== Executando Heurística Construtiva Gulosa ===" << endl;
+    cout << "Aplicando algoritmo Greedy Nearest-Feasible..." << endl;
+
+    Solution solution = GreedyNearestFeasible(*data);
+
+    // Exibe a solução construída
+    PrintSolution(*data, solution);
+
+    // Verifica a viabilidade completa da solução
+    bool solution_feasible = CheckSolutionFeasible(*data, solution.routes);
+    cout << "\n=== Verificação Final ===" << endl;
+    cout << "Solução completa é viável: " << (solution_feasible ? "SIM" : "NÃO") << endl;
+
+    if (solution_feasible) {
+        cout << "Todas as " << data->getNumStations() << " estações foram atendidas com sucesso!" << endl;
+    } else {
+        cout << "ATENÇÃO: A solução construída possui problemas de viabilidade." << endl;
+    }
+
     delete data;
     
     return 0;
