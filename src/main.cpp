@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
         cout << "Custo inicial: " << solution.total_cost << endl;
 
         auto vnd_start = std::chrono::high_resolution_clock::now();
-        auto neighborhoods = GetDefaultNeighborhoods();
+        auto neighborhoods = GetAllNeighborhoods();
         final_solution = VND(*data, solution, rng, neighborhoods);
         auto vnd_end = std::chrono::high_resolution_clock::now();
 
