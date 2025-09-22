@@ -2,7 +2,7 @@
 #define FEASIBILITY_H
 
 #include <vector>
-#include "Data.h"
+#include "Instance.h"
 
 struct Route {
     std::vector<int> nodes;  // deve ser como: {0, ..., 0}

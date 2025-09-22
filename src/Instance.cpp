@@ -1,4 +1,6 @@
-#include "Data.h"
+#include "Instance.h"
+
+using namespace std;
 
 Data::Data(int argc, char *argv[]) :
     cost_matrix(nullptr) {
@@ -125,7 +127,7 @@ void Data::printJPBikeInstanceData() {
     }
 }
 
-string Data::getInstanceName() {
+string Data::getInstanceName() const {
     string::size_type loc = instance_name.find_last_of(".", instance_name.size());
     string::size_type loc2 = instance_name.find_last_of("/", instance_name.size());
     

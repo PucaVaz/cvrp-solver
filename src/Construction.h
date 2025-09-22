@@ -1,9 +1,9 @@
-#ifndef CONSTRUCTIVE_H
-#define CONSTRUCTIVE_H
+#ifndef CONSTRUCTION_H
+#define CONSTRUCTION_H
 
 #include <vector>
 #include <random>
-#include "Data.h"
+#include "Instance.h"
 #include "Feasibility.h"
 
 struct Solution {
@@ -12,10 +12,10 @@ struct Solution {
 };
 
 // Calcula o custo de uma rota específica
-double RoutesCost(const Data& data, const Route& route);
+[[nodiscard]] double RouteCost(const Data& data, const Route& route);
 
 // Calcula o custo total de uma solução
-double SolutionCost(const Data& data, const Solution& solution);
+[[nodiscard]] double SolutionCost(const Data& data, const Solution& solution);
 
 // Heurística construtiva gulosa baseada no vizinho mais próximo viável
 Solution GreedyNearestFeasible(const Data& data, std::mt19937& rng);

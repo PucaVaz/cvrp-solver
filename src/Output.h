@@ -1,8 +1,8 @@
-#ifndef IO_H
-#define IO_H
+#ifndef OUTPUT_H
+#define OUTPUT_H
 
 #include <string>
-#include "Constructive.h"
+#include "Construction.h"
 
 void WriteSolution(const std::string& path, const Data& data, const Solution& solution);
 

@@ -1,9 +1,9 @@
-#include "VND.h"
+#include "LocalSearch.h"
 #include "Feasibility.h"
 #include <algorithm>
 #include <limits>
 
-bool ImproveTwoOpt(const Data& data, Solution& solution, std::mt19937& rng) {
+bool TwoOptStep(const Data& data, Solution& solution, std::mt19937& rng) {
     // Implementa 2-opt intra-rota: inverte um segmento da rota
     for (size_t route_idx = 0; route_idx < solution.routes.size(); ++route_idx) {
         Route& route = solution.routes[route_idx];
@@ -11,7 +11,7 @@ bool ImproveTwoOpt(const Data& data, Solution& solution, std::mt19937& rng) {
         // Precisa de pelo menos 4 nós para fazer 2-opt (0, a, b, 0)
         if (route.nodes.size() < 4) continue;
 
-        double original_cost = RoutesCost(data, route);
+        double original_cost = RouteCost(data, route);
 
         // Testa todas as inversões possíveis
         for (size_t i = 1; i < route.nodes.size() - 2; ++i) {
@@ -22,7 +22,7 @@ bool ImproveTwoOpt(const Data& data, Solution& solution, std::mt19937& rng) {
                 // Verifica viabilidade
                 RouteFeasInfo feas_info = CheckRouteFeasible(data, route);
                 if (feas_info.ok) {
-                    double new_cost = RoutesCost(data, route);
+                    double new_cost = RouteCost(data, route);
 
                     // Se encontrou melhoria, mantém e retorna
                     if (new_cost < original_cost) {
@@ -40,7 +40,7 @@ bool ImproveTwoOpt(const Data& data, Solution& solution, std::mt19937& rng) {
     return false; // Nenhuma melhoria encontrada
 }
 
-bool ImproveRelocate(const Data& data, Solution& solution, std::mt19937& rng) {
+bool RelocateStep(const Data& data, Solution& solution, std::mt19937& rng) {
     // Move um cliente de uma posição para outra (inter ou intra-rota)
     double original_cost = solution.total_cost;
 
@@ -99,7 +99,7 @@ bool ImproveRelocate(const Data& data, Solution& solution, std::mt19937& rng) {
     return false;
 }
 
-bool ImproveSwap(const Data& data, Solution& solution, std::mt19937& rng) {
+bool SwapStep(const Data& data, Solution& solution, std::mt19937& rng) {
     // Troca dois clientes entre rotas diferentes
     double original_cost = solution.total_cost;
 
@@ -142,7 +142,7 @@ bool ImproveSwap(const Data& data, Solution& solution, std::mt19937& rng) {
     return false;
 }
 
-bool ImproveOrOpt2(const Data& data, Solution& solution, std::mt19937& rng) {
+bool OrOpt2Step(const Data& data, Solution& solution, std::mt19937& rng) {
     // Move uma cadeia de 2 clientes consecutivos dentro da mesma rota
     for (size_t route_idx = 0; route_idx < solution.routes.size(); ++route_idx) {
         Route& route = solution.routes[route_idx];
@@ -150,7 +150,7 @@ bool ImproveOrOpt2(const Data& data, Solution& solution, std::mt19937& rng) {
         // Precisa de pelo menos 5 nós para Or-opt-2 (0, a, b, c, 0)
         if (route.nodes.size() < 5) continue;
 
-        double original_cost = RoutesCost(data, route);
+        double original_cost = RouteCost(data, route);
 
         // Testa mover cada par de clientes consecutivos
         for (size_t start_pos = 1; start_pos < route.nodes.size() - 2; ++start_pos) {
@@ -171,7 +171,7 @@ bool ImproveOrOpt2(const Data& data, Solution& solution, std::mt19937& rng) {
                 // Verifica viabilidade
                 RouteFeasInfo feas_info = CheckRouteFeasible(data, route);
                 if (feas_info.ok) {
-                    double new_cost = RoutesCost(data, route);
+                    double new_cost = RouteCost(data, route);
 
                     if (new_cost < original_cost) {
                         solution.total_cost = SolutionCost(data, solution);
@@ -216,9 +216,9 @@ Solution VND(const Data& data, Solution start, std::mt19937& rng,
 
 std::vector<NeighborhoodFunction> GetDefaultNeighborhoods() {
     return {
-        ImproveRelocate,
-        ImproveSwap,
-        ImproveTwoOpt,
-        ImproveOrOpt2
+        RelocateStep,
+        SwapStep,
+        TwoOptStep,
+        OrOpt2Step
     };
 }

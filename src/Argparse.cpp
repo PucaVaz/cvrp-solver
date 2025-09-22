@@ -1,4 +1,4 @@
-#include "CLI.h"
+#include "Argparse.h"
 #include <iostream>
 #include <cstring>
 
@@ -11,6 +11,7 @@ void PrintUsage(const char* program_name) {
     std::cout << "  --no-vnd             Desabilita VND, usa apenas heurística construtiva" << std::endl;
     std::cout << "  --out DIR            Diretório de saída (padrão: outputs/)" << std::endl;
     std::cout << "  --feastest           Executa testes de viabilidade" << std::endl;
+    std::cout << "  --verbose            Exibe saída detalhada" << std::endl;
     std::cout << "  --help               Exibe esta ajuda" << std::endl;
 }
 
@@ -67,6 +68,9 @@ CLIOptions ParseCLI(int argc, char* argv[]) {
         }
         else if (strcmp(argv[i], "--feastest") == 0) {
             opts.run_feastest = true;
+        }
+        else if (strcmp(argv[i], "--verbose") == 0) {
+            opts.verbose = true;
         }
         else if (strcmp(argv[i], "--help") == 0) {
             PrintUsage(argv[0]);

@@ -1,9 +1,9 @@
-#include "Constructive.h"
+#include "Construction.h"
 #include <algorithm>
 #include <limits>
 #include <iostream>
 
-double RoutesCost(const Data& data, const Route& route) {
+double RouteCost(const Data& data, const Route& route) {
     double cost = 0.0;
 
     if (route.nodes.size() < 2) {
@@ -24,7 +24,7 @@ double SolutionCost(const Data& data, const Solution& solution) {
     double total_cost = 0.0;
 
     for (const auto& route : solution.routes) {
-        total_cost += RoutesCost(data, route);
+        total_cost += RouteCost(data, route);
     }
 
     return total_cost;
@@ -160,8 +160,8 @@ Solution GreedyBestInsertion(const Data& data, std::mt19937& rng) {
                     }
 
                     // Calcula delta de custo da inserção
-                    double original_cost = RoutesCost(data, current_route);
-                    double new_cost = RoutesCost(data, test_route);
+                    double original_cost = RouteCost(data, current_route);
+                    double new_cost = RouteCost(data, test_route);
                     double delta_cost = new_cost - original_cost;
 
                     // Seleciona melhor inserção
