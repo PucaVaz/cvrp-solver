@@ -1,12 +1,14 @@
-#include "Data.h"
+#include "Instance.h"
 #include "Feasibility.h"
-#include "Constructive.h"
-#include "CLI.h"
-#include "IO.h"
-#include "VND.h"
+#include "Construction.h"
+#include "Argparse.h"
+#include "Output.h"
+#include "LocalSearch.h"
 #include <string>
 #include <random>
 #include <chrono>
+
+using namespace std;
 
 void PrintSolution(const Data& data, const Solution& solution) {
     cout << "\n=== Solução Construída (Heurística Gulosa) ===" << endl;
@@ -24,7 +26,7 @@ void PrintSolution(const Data& data, const Solution& solution) {
             }
         }
 
-        double route_cost = RoutesCost(data, route);
+        double route_cost = RouteCost(data, route);
         cout << " (custo: " << route_cost << ")" << endl;
 
         // Verifica viabilidade da rota
@@ -58,24 +60,26 @@ int main(int argc, char *argv[]) {
     cout << "Carregando instância do sistema JP-Bike..." << endl;
     data->read();
     
-    cout << "\n";
-    data->printJPBikeInstanceData();
-    
-    cout << "\n=== Matriz de Custos de Viagem ===" << endl;
-    data->printDistanceMatrix();
-    
-    cout << "\n=== Informações para Algoritmo de Rebalanceamento ===" << endl;
+    if (opts.verbose) {
+        cout << "\n";
+        data->printJPBikeInstanceData();
+        
+        cout << "\n=== Matriz de Custos de Viagem ===" << endl;
+        data->printDistanceMatrix();
+        
+        cout << "\n=== Informações para Algoritmo de Rebalanceamento ===" << endl;
     cout << "Total de localidades (depósito + estações): " << (data->getNumStations() + 1) << endl; // +1 para o depósito
     cout << "Soma total das demandas: ";
     long long total_demand = 0;
     for (int i = 0; i < data->getNumStations(); i++) {
         total_demand += data->getStationDemand(i); // getStationDemand(i) retorna a demanda da estação i
     }
-    cout << total_demand << endl;
-    if (total_demand == 0) {
-        cout << "Sistema balanceado: soma das demandas = 0" << endl;
-    } else {
-        cout << "Sistema desbalanceado: diferença = " << total_demand << endl;
+        cout << total_demand << endl;
+        if (total_demand == 0) {
+            cout << "Sistema balanceado: soma das demandas = 0" << endl;
+        } else {
+            cout << "Sistema desbalanceado: diferença = " << total_demand << endl;
+        }
     }
     
     if (opts.run_feastest) {
@@ -150,10 +154,12 @@ int main(int argc, char *argv[]) {
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
-    cout << "Tempo de construção: " << duration.count() << " ms" << endl;
+    if (opts.verbose) {
+        cout << "Tempo de construção: " << duration.count() << " ms" << endl;
 
-    // Exibe a solução construída
-    PrintSolution(*data, solution);
+        // Exibe a solução construída
+        PrintSolution(*data, solution);
+    }
 
     // Verifica a viabilidade completa da solução
     bool solution_feasible = CheckSolutionFeasible(*data, solution.routes);
@@ -169,8 +175,10 @@ int main(int argc, char *argv[]) {
     // Aplicar VND se habilitado
     Solution final_solution = solution;
     if (opts.use_vnd) {
-        cout << "\n=== VND (Variable Neighborhood Descent) ===" << endl;
-        cout << "Custo inicial: " << solution.total_cost << endl;
+        if (opts.verbose) {
+            cout << "\n=== VND (Variable Neighborhood Descent) ===" << endl;
+            cout << "Custo inicial: " << solution.total_cost << endl;
+        }
 
         auto vnd_start = std::chrono::high_resolution_clock::now();
         auto neighborhoods = GetDefaultNeighborhoods();
@@ -179,14 +187,18 @@ int main(int argc, char *argv[]) {
 
         auto vnd_duration = std::chrono::duration_cast<std::chrono::milliseconds>(vnd_end - vnd_start);
 
-        cout << "Custo final após VND: " << final_solution.total_cost << endl;
-        cout << "Melhoria: " << (solution.total_cost - final_solution.total_cost) << endl;
-        cout << "Tempo VND: " << vnd_duration.count() << " ms" << endl;
+        if (opts.verbose) {
+            cout << "Custo final após VND: " << final_solution.total_cost << endl;
+            cout << "Melhoria: " << (solution.total_cost - final_solution.total_cost) << endl;
+            cout << "Tempo VND: " << vnd_duration.count() << " ms" << endl;
+        }
 
         // Verifica se VND manteve viabilidade
         bool vnd_feasible = CheckSolutionFeasible(*data, final_solution.routes);
         if (!vnd_feasible) {
-            cout << "ATENÇÃO: VND produziu solução inviável! Usando apenas a solução construtiva." << endl;
+            if (opts.verbose) {
+                cout << "ATENÇÃO: VND produziu solução inviável! Usando apenas a solução construtiva." << endl;
+            }
             final_solution = solution;
         }
     }
@@ -204,9 +216,13 @@ int main(int argc, char *argv[]) {
     cout << "Instância: " << data->getInstanceName() << endl;
     cout << "Método: " << opts.constructive_method << endl;
     if (opts.use_vnd) {
-        cout << "Custo construtivo: " << solution.total_cost << endl;
-        cout << "Custo após VND: " << final_solution.total_cost << endl;
-        cout << "Melhoria total: " << (solution.total_cost - final_solution.total_cost) << endl;
+        if (opts.verbose) {
+            cout << "Custo construtivo: " << solution.total_cost << endl;
+            cout << "Custo após VND: " << final_solution.total_cost << endl;
+            cout << "Melhoria total: " << (solution.total_cost - final_solution.total_cost) << endl;
+        } else {
+            cout << "Custo final: " << final_solution.total_cost << endl;
+        }
     } else {
         cout << "Custo final: " << final_solution.total_cost << endl;
     }

@@ -1,5 +1,5 @@
-#ifndef DATA_H
-#define DATA_H
+#ifndef INSTANCE_H
+#define INSTANCE_H
 
 #include <iostream>
 #include <string>
@@ -7,8 +7,6 @@
 #include <sstream>
 #include <vector>
 #include <math.h>
-
-using namespace std;
 
 class Data {
 public:
@@ -20,18 +18,18 @@ public:
     void printJPBikeInstanceData();
     
     // Métodos de acesso aos dados da instância JP-Bike
-    inline int getNumStations() const { return n_stations; }
-    inline int getNumVehicles() const { return m_vehicles; }
-    inline int getVehicleCapacity() const { return vehicle_capacity; }
-    inline double getTravelCost(int i, int j) const { return cost_matrix[i][j]; }
-    inline double **getCostMatrix() { return cost_matrix; }
-    inline long long getStationDemand(int i) const { return i < station_demands.size() ? station_demands[i] : 0; }
-    inline vector<long long> getAllDemands() const { return station_demands; }
+    [[nodiscard]] inline int getNumStations() const noexcept { return n_stations; }
+    [[nodiscard]] inline int getNumVehicles() const noexcept { return m_vehicles; }
+    [[nodiscard]] inline int getVehicleCapacity() const noexcept { return vehicle_capacity; }
+    [[nodiscard]] inline double getTravelCost(int i, int j) const { return cost_matrix[i][j]; }
+    [[nodiscard]] inline double **getCostMatrix() { return cost_matrix; }
+    [[nodiscard]] inline long long getStationDemand(int i) const { return i < station_demands.size() ? station_demands[i] : 0; }
+    [[nodiscard]] inline std::vector<long long> getAllDemands() const { return station_demands; }
     
-    string getInstanceName();
+    [[nodiscard]] std::string getInstanceName() const;
 
 private:
-    string instance_name;
+    std::string instance_name;
     int nb_of_par;
     
     // Parâmetros do problema JP-Bike conforme especificação
@@ -40,7 +38,7 @@ private:
     int vehicle_capacity = 0;  // Capacidade Q de cada veículo (linha 3)
     
     // Demandas das estações: qi > 0 (coleta), qi < 0 (entrega)
-    vector<long long> station_demands;
+    std::vector<long long> station_demands;
     
     // Matriz de custos de viagem cij entre depósito/estações
     double **cost_matrix;

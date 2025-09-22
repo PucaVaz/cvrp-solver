@@ -1,5 +1,5 @@
-#ifndef CLI_H
-#define CLI_H
+#ifndef ARGPARSE_H
+#define ARGPARSE_H
 
 #include <string>
 
@@ -10,6 +10,7 @@ struct CLIOptions {
     bool use_vnd = true;
     std::string output_dir = "outputs/";
     bool run_feastest = false;
+    bool verbose = false;
 };
 
 CLIOptions ParseCLI(int argc, char* argv[]);
