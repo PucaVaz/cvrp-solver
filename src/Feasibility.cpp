@@ -3,35 +3,31 @@
 
 long long NodeDemand(const Data& data, int node) {
     if (node == 0) {
-        return 0; // depósito tem demanda zero
+        return 0;
     }
-    // estação i∈[1..n] mapeia para data.getStationDemand(i-1)
     return data.getStationDemand(node - 1);
 }
 
 RouteFeasInfo CheckRouteFeasible(const Data& data, const Route& route) {
     RouteFeasInfo info;
     
-    // Valida formato: rota deve começar e terminar no depósito (0)
     if (route.nodes.empty() || route.nodes.front() != 0 || route.nodes.back() != 0) {
-        return info; // ok = false
+        return info;
     }
     
     int n = data.getNumStations();
     
-    // Valida se todos os nós estão em [0..n]
     for (int node : route.nodes) {
         if (node < 0 || node > n) {
-            return info; // ok = false
+            return info;
         }
     }
     
-    // Calcula somas prefixas ao longo da rota (exclui posições do depósito)
     long long prefix = 0;
-    long long max_prefix = 0; // inclui 0 no rastreamento de máx/mín
+    long long max_prefix = 0;
     long long min_prefix = 0;
     
-    for (size_t i = 1; i < route.nodes.size() - 1; ++i) { // exclui primeiro e último depósito
+    for (size_t i = 1; i < route.nodes.size() - 1; ++i) {
         prefix += NodeDemand(data, route.nodes[i]);
         max_prefix = std::max(max_prefix, prefix);
         min_prefix = std::min(min_prefix, prefix);
@@ -39,14 +35,11 @@ RouteFeasInfo CheckRouteFeasible(const Data& data, const Route& route) {
     
     long long Q = static_cast<long long>(data.getVehicleCapacity());
 
-    // Calcula intervalo viável de carga inicial L0
-    long long L0_min = std::max(0LL, -min_prefix);  // para não ficar negativo
-    long long L0_max = Q - max_prefix;              // para não exceder Q no pico
+    long long L0_min = std::max(0LL, -min_prefix);
+    long long L0_max = Q - max_prefix;
 
-    // Rota é viável se existe L0 válido no intervalo [L0_min, L0_max]
     bool feasible = (L0_min <= L0_max);
 
-    // Define valores de retorno
     info.ok = feasible;
     info.max_prefix = max_prefix;
     info.min_prefix = min_prefix;

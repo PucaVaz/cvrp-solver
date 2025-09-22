@@ -44,29 +44,32 @@ int main(int argc, char *argv[]) {
     // Processa argumentos da linha de comando
     CLIOptions opts = ParseCLI(argc, argv);
 
-    // Inicializa gerador de números aleatórios com seed
     std::mt19937 rng(opts.seed);
 
-    cout << "=== Solver JP-Bike Rebalancing ===" << endl;
-    cout << "Semente aleatória: " << opts.seed << endl;
-    if (opts.use_ils) {
-        cout << "Executando: ILS (Iterated Local Search)" << endl;
-        cout << "Parâmetros ILS: max_iter=" << opts.max_iter 
-             << ", max_iter_ils=" << opts.max_iter_ils << endl;
-        cout << "Alpha range: [" << opts.rcl_alpha_min << ", " << opts.rcl_alpha_max << "]" << endl;
-        cout << "Perturbation strength: " << opts.perturb_strength << endl;
-    } else {
-        cout << "Método construtivo: " << opts.constructive_method << endl;
-        cout << "VND habilitado: " << (opts.use_vnd ? "SIM" : "NÃO") << endl;
+    if (opts.verbose) {
+        cout << "=== Solver JP-Bike Rebalancing ===" << endl;
+        cout << "Semente aleatória: " << opts.seed << endl;
+        if (opts.use_ils) {
+            cout << "Executando: ILS (Iterated Local Search)" << endl;
+            cout << "Parâmetros ILS: max_iter=" << opts.max_iter
+                 << ", max_iter_ils=" << opts.max_iter_ils << endl;
+            cout << "Alpha range: [" << opts.rcl_alpha_min << ", " << opts.rcl_alpha_max << "]" << endl;
+            cout << "Perturbation strength: " << opts.perturb_strength << endl;
+        } else {
+            cout << "Método construtivo: " << opts.constructive_method << endl;
+            cout << "VND habilitado: " << (opts.use_vnd ? "SIM" : "NÃO") << endl;
+        }
+        cout << "Diretório de saída: " << opts.output_dir << endl;
+        cout << endl;
     }
-    cout << "Diretório de saída: " << opts.output_dir << endl;
-    cout << endl;
 
     // Carrega dados da instância usando apenas o caminho do arquivo
     char* temp_argv[2] = {argv[0], const_cast<char*>(opts.instance_path.c_str())};
     Data *data = new Data(2, temp_argv);
     
-    cout << "Carregando instância do sistema JP-Bike..." << endl;
+    if (opts.verbose) {
+        cout << "Carregando instância do sistema JP-Bike..." << endl;
+    }
     data->read();
     
     if (opts.verbose) {
@@ -77,8 +80,8 @@ int main(int argc, char *argv[]) {
         data->printDistanceMatrix();
         
         cout << "\n=== Informações para Algoritmo de Rebalanceamento ===" << endl;
-    cout << "Total de localidades (depósito + estações): " << (data->getNumStations() + 1) << endl; // +1 para o depósito
-    cout << "Soma total das demandas: ";
+        cout << "Total de localidades (depósito + estações): " << (data->getNumStations() + 1) << endl;
+        cout << "Soma total das demandas: ";
     long long total_demand = 0;
     for (int i = 0; i < data->getNumStations(); i++) {
         total_demand += data->getStationDemand(i); // getStationDemand(i) retorna a demanda da estação i
@@ -157,16 +160,22 @@ int main(int argc, char *argv[]) {
         };
         solution = ILS(*data, rng, ils_params, opts.verbose);
     } else {
-        cout << "\n=== Executando Heurística Construtiva ===" << endl;
+        if (opts.verbose) {
+            cout << "\n=== Executando Heurística Construtiva ===" << endl;
+        }
 
         if (opts.constructive_method == "nearest") {
-            cout << "Aplicando algoritmo Greedy Nearest-Feasible..." << endl;
+            if (opts.verbose) {
+                cout << "Aplicando algoritmo Greedy Nearest-Feasible..." << endl;
+            }
             solution = GreedyNearestFeasible(*data, rng);
         } else if (opts.constructive_method == "insertion") {
-            cout << "Aplicando algoritmo Greedy Best-Insertion..." << endl;
+            if (opts.verbose) {
+                cout << "Aplicando algoritmo Greedy Best-Insertion..." << endl;
+            }
             solution = GreedyBestInsertion(*data, rng);
         } else {
-            cout << "Método construtivo desconhecido: " << opts.constructive_method << endl;
+            cerr << "Método construtivo desconhecido: " << opts.constructive_method << endl;
             delete data;
             return 1;
         }
@@ -242,13 +251,9 @@ int main(int argc, char *argv[]) {
     } else {
         cout << "Método: " << opts.constructive_method << endl;
         if (opts.use_vnd) {
-            if (opts.verbose) {
-                cout << "Custo construtivo: " << solution.total_cost << endl;
-                cout << "Custo após VND: " << final_solution.total_cost << endl;
-                cout << "Melhoria total: " << (solution.total_cost - final_solution.total_cost) << endl;
-            } else {
-                cout << "Custo final: " << final_solution.total_cost << endl;
-            }
+            cout << "Custo construtivo: " << solution.total_cost << endl;
+            cout << "Custo após VND: " << final_solution.total_cost << endl;
+            cout << "Melhoria total: " << (solution.total_cost - final_solution.total_cost) << endl;
         } else {
             cout << "Custo final: " << final_solution.total_cost << endl;
         }
@@ -257,7 +262,7 @@ int main(int argc, char *argv[]) {
     cout << "Viável: " << (final_feasible ? "SIM" : "NÃO") << endl;
 
     if (!final_feasible) {
-        cout << "\nERRO: Solução final é inviável - arquivo .out não foi gerado!" << endl;
+        cerr << "\nERRO: Solução final é inviável - arquivo .out não foi gerado!" << endl;
     }
 
     delete data;

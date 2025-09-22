@@ -24,7 +24,7 @@ Data::Data(int argc, char *argv[]) :
 
 Data::~Data() {
     if (cost_matrix != nullptr) {
-        for (int i = 0; i <= n_stations; i++) {  // +1 para incluir o depósito
+        for (int i = 0; i <= n_stations; i++) {
             delete[] cost_matrix[i];
         }
         delete[] cost_matrix;
@@ -35,57 +35,40 @@ void Data::read() {
     ifstream inFile(instance_name, ios::in);
     
     if (!inFile) {
-        cout << "Arquivo de instância JP-Bike não encontrado: " << instance_name << endl;
+        cerr << "Erro: arquivo não encontrado: " << instance_name << endl;
         exit(1);
     }
     
-    // Lê linha 1: n (número de estações)
     inFile >> n_stations;
-    
-    // Lê linha 2: m (número de veículos disponíveis)
     inFile >> m_vehicles;
-    
-    // Lê linha 3: Q (capacidade de cada veículo)
     inFile >> vehicle_capacity;
     
-    // Pula linha vazia (linha 4)
     string empty_line;
-    getline(inFile, empty_line); // Consome o \n após Q
-    getline(inFile, empty_line); // Linha vazia
+    getline(inFile, empty_line);
+    getline(inFile, empty_line);
     
-    // Lê linha 5: demandas das estações (qi)
-    // qi > 0: estação de coleta (bicicletas devem ser removidas)
-    // qi < 0: estação de entrega (bicicletas devem ser entregues)
     string demands_line;
     getline(inFile, demands_line);
-    
-    // Faz parsing das demandas
     istringstream demands_stream(demands_line);
     long long demand;
     while (demands_stream >> demand) {
         station_demands.push_back(demand);
     }
     
-    // Verifica se o número de demandas confere com n
     if (static_cast<int>(station_demands.size()) != n_stations) {
-        cout << "Erro: número de demandas (" << station_demands.size() 
+        cerr << "Erro: número de demandas (" << station_demands.size()
              << ") não confere com número de estações (" << n_stations << ")" << endl;
         exit(1);
     }
     
-    // Pula linha vazia (linha 6)
     getline(inFile, empty_line);
     
-    // Aloca matriz de custos de viagem cij
-    // Inclui depósito (índice 0) + n estações (índices 1 a n)
     int matrix_size = n_stations + 1;
     cost_matrix = new double*[matrix_size];
     for (int i = 0; i < matrix_size; i++) {
         cost_matrix[i] = new double[matrix_size];
     }
-    
-    // Lê a matriz de custos de viagem (linhas 7+)
-    // Matriz é (n+1) x (n+1) incluindo depósito
+
     for (int i = 0; i < matrix_size; i++) {
         for (int j = 0; j < matrix_size; j++) {
             inFile >> cost_matrix[i][j];

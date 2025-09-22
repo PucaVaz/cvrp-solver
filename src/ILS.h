@@ -14,8 +14,6 @@ struct ILSParams {
     int     perturb_strength= 2;
 };
 
-/// @brief Iterated Local Search with GRASP constructor and RVND.
-/// @return Best feasible solution found.
 [[nodiscard]] Solution ILS(const Data& data, std::mt19937& rng,
                            const ILSParams& p, bool verbose);
 
