@@ -222,3 +222,29 @@ std::vector<NeighborhoodFunction> GetDefaultNeighborhoods() {
         OrOpt2Step
     };
 }
+
+Solution RVND(const Data& data, const Solution& start, std::mt19937& rng) {
+    auto neighborhoods = GetDefaultNeighborhoods();
+    
+    Solution current_solution = start;
+    current_solution.total_cost = SolutionCost(data, current_solution);
+
+    // Shuffle neighborhoods initially
+    std::shuffle(neighborhoods.begin(), neighborhoods.end(), rng);
+
+    int k = 0; // Índice da vizinhança atual
+
+    while (k < static_cast<int>(neighborhoods.size())) {
+        bool improved = neighborhoods[k](data, current_solution, rng);
+
+        if (improved) {
+            // RVND: re-shuffle after improvement and restart
+            std::shuffle(neighborhoods.begin(), neighborhoods.end(), rng);
+            k = 0;
+        } else {
+            k++; // Move para próxima vizinhança
+        }
+    }
+
+    return current_solution;
+}

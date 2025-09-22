@@ -31,4 +31,9 @@ Solution VND(const Data& data, Solution start, std::mt19937& rng,
 // Ordem padrão das vizinhanças para VND
 std::vector<NeighborhoodFunction> GetDefaultNeighborhoods();
 
+/// @brief Randomized VND: shuffle neighborhoods each call.
+/// @return Locally optimal solution after RVND.
+[[nodiscard]] Solution RVND(const Data& data, const Solution& start,
+                            std::mt19937& rng);
+
 #endif

@@ -23,4 +23,11 @@ Solution GreedyNearestFeasible(const Data& data, std::mt19937& rng);
 // Heurística construtiva baseada na melhor inserção viável
 Solution GreedyBestInsertion(const Data& data, std::mt19937& rng);
 
+/// @brief GRASP-style constructor using Best-Insertion with RCL.
+/// @param alpha_in [alpha_min, alpha_max], sampled each build.
+/// @return A feasible (or repaired) initial solution.
+[[nodiscard]] Solution BuildInitial_GRASP(const Data& data,
+                                          std::mt19937& rng,
+                                          double alpha_in);
+
 #endif

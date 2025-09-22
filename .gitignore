@@ -2,3 +2,17 @@
 *.o
 *.log
 *.out
+
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+.vscode/
+
+bin/
+obj/
+
+results_*/
+outputs/*.out
