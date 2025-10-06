@@ -1,6 +1,8 @@
 # JP-Bike Rebalancing Solver
 
-Fast, reproducible C++ solver for the static bicycle rebalancing problem, a Capacitated Vehicle Routing Problem. Includes constructive heuristics, local search (VND/RVND), and an ILS metaheuristic with GRASP construction.
+Fast, reproducible C++ solver for the static bicycle rebalancing problem, a Capacitated Vehicle Routing Problem (CVRP) variant. Includes constructive heuristics, local search (VND/RVND), and an ILS metaheuristic with GRASP construction.
+
+Keywords: CVRP, SBRP (Static Bike Rebalancing Problem), Mixed Pickup & Delivery, VRP, ILS, VND
 
 ## Highlights
 
@@ -114,6 +116,14 @@ Each `.out` file contains:
   - Initial solution via GRASP (α sampled in `[αmin, αmax]`)
   - RVND as the local improvement procedure
   - Feasible perturbations: intra/inter‑route moves, swaps, partial 2‑Opt
+
+## Relation to CVRP
+
+This problem is a CVRP variant with mixed pickup and delivery:
+- Each station has a signed demand (`qi`): positive = pickup, negative = delivery.
+- Each station is visited exactly once; vehicles have capacity `Q` and start at the depot.
+- Feasibility on a route depends on the existence of an initial load `L0` within `[L0_min, L0_max]` computed from demand prefixes — equivalent to a one‑commodity pickup‑and‑delivery capacity check.
+- Objective matches CVRP: minimize total travel cost while respecting capacity and coverage constraints.
 
 ## Feasibility Model (L0)
 
