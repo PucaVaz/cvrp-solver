@@ -1,92 +1,162 @@
-# Sistema JP-Bike - Parser de Instâncias de Rebalanceamento
+# JP-Bike Rebalancing Solver
 
-Este parser lê instâncias do problema de rebalanceamento de bicicletas do sistema JP-Bike conforme especificação dos professores Teobaldo Bulhões e Gilberto Farias da UFPB.
+Fast, reproducible C++ solver for the static bicycle rebalancing problem, a Capacitated Vehicle Routing Problem. Includes constructive heuristics, local search (VND/RVND), and an ILS metaheuristic with GRASP construction.
 
-## Estrutura dos Arquivos
+## Highlights
 
-- `src/Data.h` - Arquivo de cabeçalho com definição da classe Data
-- `src/Data.cpp` - Implementação do parser JP-Bike
-- `src/main.cpp` - Programa de teste para demonstrar o parser
-- `src/makefile` - Configuração de compilação
+- Clean CLI with sensible defaults and full verbosity mode
+- Constructive methods: Nearest‑Feasible, Best‑Insertion
+- Local search: VND (Relocate, Swap, 2‑Opt, Or‑Opt‑2) and RVND
+- ILS: GRASP α in [αmin, αmax] + RVND + feasible perturbations
+- Standardized input/output formats and ready‑to‑run scripts
 
-## Formato da Instância JP-Bike
+## Quick Start
 
-O formato do arquivo de instância segue a especificação:
-```
-1 n                           # Número de estações
-2 m                           # Número de veículos disponíveis  
-3 Q                           # Capacidade de cada veículo
-<param4>                      # Parâmetro adicional
-5 <d1> <d2> ... <dn>         # Demandas das estações
-<param6>                      # Parâmetro adicional
-<id1> <c1,1> <c1,2> ...      # Matriz de custos linha 1
-<id2> <c2,1> <c2,2> ...      # Matriz de custos linha 2
-...                          # Linhas adicionais da matriz
-```
+Requirements
+- g++ with C++20, make
+- Optional: `just`, `clang-format`, `clang-tidy`
 
-## Interpretação das Demandas
-
-- **qi > 0**: Estação de coleta (qi bicicletas devem ser removidas)
-- **qi < 0**: Estação de entrega (|qi| bicicletas devem ser entregues)
-- **qi = 0**: Estação balanceada
-
-## Compilação
-
+Build
 ```bash
-cd src
-make
+# using make
+cd src && make -s
+
+# or using just (optional)
+just build
 ```
 
-## Uso
-
+Run
 ```bash
-./jp_bike_solver <arquivo_instancia>
+./bin/apa_jpbike --instance instances/instancias_teste/n14_q30.txt --verbose
 ```
 
-Exemplo:
+## CLI Reference
+
+Constructive + optional VND (default)
+- `--instance PATH`  path to instance file (required)
+- `--seed N`  RNG seed (default: 42)
+- `--constructive {nearest|insertion}`  constructive method (default: nearest)
+- `--no-vnd`  disable VND (keep constructive only)
+- `--out DIR`  output directory (default: `outputs/`)
+- `--feastest`  run built‑in feasibility tests
+- `--verbose`  detailed output (costs, routes, L0 suggested)
+- `--help`  usage
+
+ILS options
+- `--ils`  run Iterated Local Search
+- `--max-iter N`  outer ILS iterations (default: 50)
+- `--max-iter-ils N`  no‑improve iterations before restart (default: 150)
+- `--rcl-alpha-min F`  GRASP α lower bound (default: 0.1)
+- `--rcl-alpha-max F`  GRASP α upper bound (default: 0.5)
+- `--perturb-strength K`  base perturbation intensity (default: 2)
+
+Examples
 ```bash
-make test
-# ou
-../jp_bike_solver ../instances/instancia_pdf.txt
+# simple run (nearest)
+./bin/apa_jpbike --instance instances/instancias_teste/n14_q30.txt
+
+# best-insertion with fixed seed
+./bin/apa_jpbike --instance instances/copa/instancia1.txt --seed 42 --constructive insertion
+
+# constructive only (no VND)
+./bin/apa_jpbike --instance instances/copa/instancia2.txt --no-vnd --constructive nearest
+
+# ILS with custom parameters
+./bin/apa_jpbike \
+  --instance instances/instancias_teste/n40_q20.txt \
+  --ils --max-iter 60 --max-iter-ils 200 \
+  --rcl-alpha-min 0.1 --rcl-alpha-max 0.4 \
+  --perturb-strength 3 --verbose
+
+# custom output directory
+./bin/apa_jpbike --instance instances/copa/instancia3.txt --out resultados/
 ```
 
-## Saída do Parser
+## Instance Format (JP‑Bike)
 
-O parser exibe:
-- Nome da instância JP-Bike
-- Parâmetros do problema de rebalanceamento (n, m, Q)
-- Interpretação das demandas de cada estação
-- Matriz de custos de viagem entre depósito e estações
-- Verificação de balanceamento do sistema
-
-## Exemplo de Instância
-
-Para a instância do exemplo dos professores (n=7, m=4, Q=10):
+Plain‑text, no labels:
 ```
-1 7
-2 4  
-3 10
-4
-5 3 -6 4 -2 3 -6 -4
-6
-7 0 6 10 25 21 20 20 20
-8 4 0 21 5 20 30 20 27
+n                             # number of stations
+m                             # number of vehicles
+Q                             # vehicle capacity
+                              # blank line
+d1 d2 ... dn                  # station demands
+                              # blank line
+c0,0 c0,1 c0,2 ... c0,n       # cost matrix row 0 (depot)
+c1,0 c1,1 c1,2 ... c1,n       # cost matrix row 1
+...                           # (n+1) x (n+1)
+```
+Demand meaning
+- `qi > 0`: collect `qi` bikes from station i
+- `qi < 0`: deliver `|qi|` bikes to station i
+- `qi = 0`: station already balanced
+
+## Output Format
+
+Each `.out` file contains:
+```
+<total_cost>
+<vehicles_used>
+0 v1 v2 ... vk 0
+0 u1 u2 ... uj 0
 ...
 ```
 
-## Estrutura do Problema
+## Algorithms
 
-- **Depósito**: Vértice 0, ponto de partida/chegada dos veículos
-- **Estações**: Vértices 1 a n, locais com demandas de rebalanceamento
-- **Objetivo**: Minimizar custo total das rotas respeitando capacidades
-- **Restrições**: Capacidade dos veículos, atendimento completo das demandas
+- Constructive
+  - Nearest‑Feasible: greedily visits the closest feasible next station
+  - Best‑Insertion: inserts each station in the position with minimal cost increase
+- Local Search
+  - VND order: Relocate → Swap → 2‑Opt → Or‑Opt‑2
+  - RVND: shuffle neighborhood order on every improvement
+- ILS
+  - Initial solution via GRASP (α sampled in `[αmin, αmax]`)
+  - RVND as the local improvement procedure
+  - Feasible perturbations: intra/inter‑route moves, swaps, partial 2‑Opt
 
-## Implementação
+## Feasibility Model (L0)
 
-- Segue diretrizes de codificação C++ do projeto ILS-SP-CVRP
-- Usa header guards tradicionais (`#ifndef`)
-- Convenções de nomenclatura snake_case para variáveis
-- Gerenciamento seguro de memória com RAII
-- Interface consistente com outros parsers do projeto
+For a route `0 → … → 0`, let prefix sums accumulate node demands (depot = 0). Define
+`L0_min = max(0, -min_prefix)`, `L0_max = Q - max_prefix`. The route is feasible iff
+`L0_min ≤ L0 ≤ L0_max` for some initial load `L0`. The solver computes a suggested `L0`
+and validates all routes and the full solution.
 
-Este parser serve como base para implementação de algoritmos de otimização para o problema de rebalanceamento do sistema JP-Bike.
+## Project Layout
+
+```
+src/
+  Argparse.*        # CLI parsing
+  Construction.*    # Greedy + GRASP builders, Solution type
+  Feasibility.*     # L0 interval checks, route/solution validation
+  ILS.*             # Iterated Local Search (GRASP + RVND + perturb)
+  Instance.*        # Instance reader and data model
+  LocalSearch.*     # VND/RVND neighborhoods
+  Output.*          # .out writer
+  main.cpp          # entry point
+  makefile          # build script (bin/ and obj/)
+instances/
+  copa/             # Copa APA instances
+  instancias_teste/ # test instances
+scripts/
+  run_copa_simple.sh, run_copa.sh, run_tests.sh, run_tests_ils.sh
+bin/ obj/ outputs/  # build artifacts and default outputs
+```
+
+## Scripts
+
+- `scripts/run_copa_simple.sh`  run Copa instances with nearest/insertion
+- `scripts/run_copa.sh`  extended scenarios
+- `scripts/run_tests.sh`  constructive + VND tests
+- `scripts/run_tests_ils.sh`  ILS tests
+
+## Troubleshooting
+
+- “file not found”: check `--instance` path and run from repo root
+- “instance required”: pass `--instance <path>`
+- Use `--verbose` to inspect route feasibility and costs
+- To reproduce results, fix `--seed`
+
+## Acknowledgements
+
+Specification by professors Teobaldo Bulhões and Gilberto Farias (UFPB)

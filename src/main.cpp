@@ -4,6 +4,7 @@
 #include "Argparse.h"
 #include "Output.h"
 #include "LocalSearch.h"
+#include "ILS.h"
 #include <string>
 #include <random>
 #include <chrono>
@@ -43,21 +44,32 @@ int main(int argc, char *argv[]) {
     // Processa argumentos da linha de comando
     CLIOptions opts = ParseCLI(argc, argv);
 
-    // Inicializa gerador de números aleatórios com seed
     std::mt19937 rng(opts.seed);
 
-    cout << "=== Solver JP-Bike Rebalancing ===" << endl;
-    cout << "Semente aleatória: " << opts.seed << endl;
-    cout << "Método construtivo: " << opts.constructive_method << endl;
-    cout << "VND habilitado: " << (opts.use_vnd ? "SIM" : "NÃO") << endl;
-    cout << "Diretório de saída: " << opts.output_dir << endl;
-    cout << endl;
+    if (opts.verbose) {
+        cout << "=== Solver JP-Bike Rebalancing ===" << endl;
+        cout << "Semente aleatória: " << opts.seed << endl;
+        if (opts.use_ils) {
+            cout << "Executando: ILS (Iterated Local Search)" << endl;
+            cout << "Parâmetros ILS: max_iter=" << opts.max_iter
+                 << ", max_iter_ils=" << opts.max_iter_ils << endl;
+            cout << "Alpha range: [" << opts.rcl_alpha_min << ", " << opts.rcl_alpha_max << "]" << endl;
+            cout << "Perturbation strength: " << opts.perturb_strength << endl;
+        } else {
+            cout << "Método construtivo: " << opts.constructive_method << endl;
+            cout << "VND habilitado: " << (opts.use_vnd ? "SIM" : "NÃO") << endl;
+        }
+        cout << "Diretório de saída: " << opts.output_dir << endl;
+        cout << endl;
+    }
 
     // Carrega dados da instância usando apenas o caminho do arquivo
     char* temp_argv[2] = {argv[0], const_cast<char*>(opts.instance_path.c_str())};
     Data *data = new Data(2, temp_argv);
     
-    cout << "Carregando instância do sistema JP-Bike..." << endl;
+    if (opts.verbose) {
+        cout << "Carregando instância do sistema JP-Bike..." << endl;
+    }
     data->read();
     
     if (opts.verbose) {
@@ -68,8 +80,8 @@ int main(int argc, char *argv[]) {
         data->printDistanceMatrix();
         
         cout << "\n=== Informações para Algoritmo de Rebalanceamento ===" << endl;
-    cout << "Total de localidades (depósito + estações): " << (data->getNumStations() + 1) << endl; // +1 para o depósito
-    cout << "Soma total das demandas: ";
+        cout << "Total de localidades (depósito + estações): " << (data->getNumStations() + 1) << endl;
+        cout << "Soma total das demandas: ";
     long long total_demand = 0;
     for (int i = 0; i < data->getNumStations(); i++) {
         total_demand += data->getStationDemand(i); // getStationDemand(i) retorna a demanda da estação i
@@ -134,21 +146,39 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    cout << "\n=== Executando Heurística Construtiva ===" << endl;
-
     auto start_time = std::chrono::high_resolution_clock::now();
     Solution solution;
 
-    if (opts.constructive_method == "nearest") {
-        cout << "Aplicando algoritmo Greedy Nearest-Feasible..." << endl;
-        solution = GreedyNearestFeasible(*data, rng);
-    } else if (opts.constructive_method == "insertion") {
-        cout << "Aplicando algoritmo Greedy Best-Insertion..." << endl;
-        solution = GreedyBestInsertion(*data, rng);
+    // Execute ILS or traditional constructive + VND
+    if (opts.use_ils) {
+        ILSParams ils_params{
+            opts.max_iter,
+            opts.max_iter_ils,
+            opts.rcl_alpha_min,
+            opts.rcl_alpha_max,
+            opts.perturb_strength
+        };
+        solution = ILS(*data, rng, ils_params, opts.verbose);
     } else {
-        cout << "Método construtivo desconhecido: " << opts.constructive_method << endl;
-        delete data;
-        return 1;
+        if (opts.verbose) {
+            cout << "\n=== Executando Heurística Construtiva ===" << endl;
+        }
+
+        if (opts.constructive_method == "nearest") {
+            if (opts.verbose) {
+                cout << "Aplicando algoritmo Greedy Nearest-Feasible..." << endl;
+            }
+            solution = GreedyNearestFeasible(*data, rng);
+        } else if (opts.constructive_method == "insertion") {
+            if (opts.verbose) {
+                cout << "Aplicando algoritmo Greedy Best-Insertion..." << endl;
+            }
+            solution = GreedyBestInsertion(*data, rng);
+        } else {
+            cerr << "Método construtivo desconhecido: " << opts.constructive_method << endl;
+            delete data;
+            return 1;
+        }
     }
 
     auto end_time = std::chrono::high_resolution_clock::now();
@@ -172,9 +202,9 @@ int main(int argc, char *argv[]) {
         cout << "ATENÇÃO: A solução construída possui problemas de viabilidade." << endl;
     }
 
-    // Aplicar VND se habilitado
+    // Aplicar VND se habilitado (apenas para métodos não-ILS)
     Solution final_solution = solution;
-    if (opts.use_vnd) {
+    if (opts.use_vnd && !opts.use_ils) {
         if (opts.verbose) {
             cout << "\n=== VND (Variable Neighborhood Descent) ===" << endl;
             cout << "Custo inicial: " << solution.total_cost << endl;
@@ -214,23 +244,25 @@ int main(int argc, char *argv[]) {
 
     cout << "\n=== Resumo Final ===" << endl;
     cout << "Instância: " << data->getInstanceName() << endl;
-    cout << "Método: " << opts.constructive_method << endl;
-    if (opts.use_vnd) {
-        if (opts.verbose) {
+    
+    if (opts.use_ils) {
+        cout << "Método: ILS (Iterated Local Search)" << endl;
+        cout << "Custo final: " << final_solution.total_cost << endl;
+    } else {
+        cout << "Método: " << opts.constructive_method << endl;
+        if (opts.use_vnd) {
             cout << "Custo construtivo: " << solution.total_cost << endl;
             cout << "Custo após VND: " << final_solution.total_cost << endl;
             cout << "Melhoria total: " << (solution.total_cost - final_solution.total_cost) << endl;
         } else {
             cout << "Custo final: " << final_solution.total_cost << endl;
         }
-    } else {
-        cout << "Custo final: " << final_solution.total_cost << endl;
     }
     cout << "Veículos utilizados: " << final_solution.routes.size() << "/" << data->getNumVehicles() << endl;
     cout << "Viável: " << (final_feasible ? "SIM" : "NÃO") << endl;
 
     if (!final_feasible) {
-        cout << "\nERRO: Solução final é inviável - arquivo .out não foi gerado!" << endl;
+        cerr << "\nERRO: Solução final é inviável - arquivo .out não foi gerado!" << endl;
     }
 
     delete data;
